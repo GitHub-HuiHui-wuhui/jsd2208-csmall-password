@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.tedu.csmall.password.mapper.AdminMapper">
+    <!--int insert(Admin admin);-->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO ams_admin (
+        username, password, nickname, avatar, phone,
+        email, description, enable, last_login_ip, login_count,
+        gmt_last_login
+        ) VALUES (
+        #{username}, #{password}, #{nickname}, #{avatar}, #{phone},
+        #{email}, #{description}, #{enable}, #{lastLoginIp}, #{loginCount},
+        #{gmtLastLogin}
+        )
+    </insert>
+
+    <!--int insertBeach(List<Admin> adminList);-->
+    <insert id="insertBeach" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO ams_admin (
+        username, password, nickname, avatar, phone,
+        email, description, enable, last_login_ip, login_count,
+        gmt_last_login
+        ) VALUES
+        <foreach collection="list" item="admin" separator=",">
+            (
+            #{admin.username}, #{admin.password}, #{admin.nickname}, #{admin.avatar}, #{admin.phone},
+            #{admin.email}, #{admin.description}, #{admin.enable}, #{admin.lastLoginIp}, #{admin.loginCount},
+            #{admin.gmtLastLogin}
+            )
+        </foreach>
+    </insert>
+
+    <!--int deleteById(Long id);-->
+    <delete id="deleteById">
+        DELETE FROM ams_admin WHERE id=#{id}
+    </delete>
+
+    <!--int deleteByIds(Long[] ids);-->
+    <delete id="deleteByIds">
+        DELETE FROM ams_admin WHERE id IN (
+        <foreach collection="array" item="id" separator=",">
+            #{id}
+        </foreach>
+        )
+
+    </delete>
+
+    <!--int update(Admin admin);-->
+    <update id="update">
+        UPDATE ams_admin
+        <set>
+            <if test="username != null">
+                username=#{username}
+            </if>
+            <if test="password != null">
+                password=#{password},
+            </if>
+            <if test="nickname != null">
+                nickname=#{nickname},
+            </if>
+            <if test="avatar != null">
+                avatar=#{avatar},
+            </if>
+            <if test="phone != null">
+                phone=#{phone},
+            </if>
+            <if test="email != null">
+                email=#{email},
+            </if>
+            <if test="description != null">
+                description=#{description},
+            </if>
+            <if test="enable != null">
+                enable=#{enable},
+            </if>
+            <if test="lastLoginIp != null">
+                last_login_ip=#{lastLoginIp},
+            </if>
+            <if test="loginCount != null">
+                login_count=#{loginCount},
+            </if>
+            <if test="gmtLastLogin != null">
+                gmt_last_login=#{gmtLastLogin},
+            </if>
+        </set>
+        WHERE id=#{id}
+    </update>
+
+    <!--int count();-->
+    <select id="count" resultType="int">
+        SELECT COUNT(*) FROM ams_admin
+    </select>
+
+    <!--int countByUsername(String username);-->
+    <select id="countByUsername" resultType="int">
+        SELECT COUNT(*) FROM ams_admin WHERE username=#{username}
+    </select>
+
+    <!--int contByPhone(String phone);-->
+    <select id="contByPhone" resultType="int">
+        SELECT count(*) FROM ams_admin WHERE phone=#{phone}
+    </select>
+
+    <!--int countByEmail(String email);-->
+    <select id="countByEmail" resultType="int">
+        SELECT COUNT(*) FROM ams_admin WHERE email=#{email}
+    </select>
+
+    <!--List<AdminListItemVO> list();-->
+    <select id="list" resultMap="ListResultMap">
+        SELECT
+        <include refid="ListQueryFields"/>
+        FROM
+        ams_admin
+        ORDER BY
+        enable DESC, id ASC
+    </select>
+
+    <!--AdminStandardVO getStandById(Long id);-->
+    <select id="getStandById" resultMap="StandResultMap">
+        SELECT
+        <include refid="StandQueryFields"/>
+        FROM
+        ams_admin
+        WHERE
+        id=#{id}
+    </select>
+
+    <!--AdminLoginInfoVO getLoginInfoByUsername(String username);-->
+    <select id="getLoginInfoByUsername" resultMap="LoginInfoResultMap">
+        SELECT
+        <include refid="LoginInfoQueryFields"/>
+        FROM
+        ams_admin
+        LEFT JOIN ams_admin_role ON ams_admin.id=ams_admin_role.admin_id
+        LEFT JOIN ams_role_permission ON ams_admin_role.role_id=ams_role_permission.role_id
+        LEFT JOIN ams_permission ON ams_role_permission.permission_id=ams_permission.id
+        WHERE
+        username=#{username}
+    </select>
+
+    <sql id="LoginInfoQueryFields">
+        <if test="true">
+            ams_admin.id,
+            ams_admin.username,
+            ams_admin.password,
+            ams_admin.enable,
+            ams_permission.value
+        </if>
+    </sql>
+
+    <!-- collection标签：用于封装List结果，也可理解为1对多的结果，例如1个管理员有多个权限，则权限需要通过此标签来配置 -->
+    <!-- collection标签的property属性：取值为封装结果中的类的属性名 -->
+    <!-- collection标签的ofType属性：取值为List集合属性中的元素类型的全限定名，如果是java.lang包下的类，可以不写包名 -->
+    <!-- collection标签的子级：配置如何创建出ofType的对象，可以通过constructor标签配置简单的对象如何创建，也可以使用id标签和若干个result标签配置较复杂的对象 -->
+    <!-- 注意：当存在“非单表”查询时，即使column与property的值相同，也必须配置 -->
+    <resultMap id="LoginInfoResultMap" type="cn.tedu.csmall.password.pojo.vo.AdminLoginInfoVO">
+        <id column="id" property="id"/>
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="enable" property="enable"/>
+        <collection property="permissions" ofType="java.lang.String">
+            <constructor>
+                <arg column="value"/>
+            </constructor>
+        </collection>
+    </resultMap>
+
+    <sql id="ListQueryFields">
+        <if test="true">
+            id, username, nickname, avatar, phone, email, description,
+            enable, last_login_ip, login_count, gmt_last_login
+        </if>
+    </sql>
+    <resultMap id="ListResultMap" type="cn.tedu.csmall.password.pojo.vo.AdminListItemVO">
+        <id column="id" property="id"/>
+        <result column="username" property="username"/>
+        <result column="nickname" property="nickname"/>
+        <result column="avatar" property="avatar"/>
+        <result column="phone" property="phone"/>
+        <result column="email" property="email"/>
+        <result column="description" property="description"/>
+        <result column="enable" property="enable"/>
+        <result column="last_login_ip" property="lastLoginIp"/>
+        <result column="login_count" property="loginCount"/>
+        <result column="gmt_last_login" property="gmtLastLogin"/>
+    </resultMap>
+
+    <sql id="StandQueryFields">
+        <if test="true">
+            id, username, nickname, avatar, phone, email, description,
+            enable, last_login_ip, login_count, gmt_last_login
+        </if>
+    </sql>
+    <resultMap id="StandResultMap" type="cn.tedu.csmall.password.pojo.vo.AdminStandardVO">
+        <id column="id" property="id"/>
+        <result column="username" property="username"/>
+        <result column="nickname" property="nickname"/>
+        <result column="avatar" property="avatar"/>
+        <result column="phone" property="phone"/>
+        <result column="email" property="email"/>
+        <result column="description" property="description"/>
+        <result column="enable" property="enable"/>
+        <result column="last_login_ip" property="lastLoginIp"/>
+        <result column="login_count" property="loginCount"/>
+        <result column="gmt_last_login" property="gmtLastLogin"/>
+    </resultMap>
+</mapper>
